@@ -1,0 +1,6 @@
+[submodule "vendor/simpleini"]
+	path = vendor/simpleini
+	url = https://github.com/brofield/simpleini
+[submodule "vendor/urmem"]
+	path = vendor/urmem
+	url = https://github.com/katursis/urmem/

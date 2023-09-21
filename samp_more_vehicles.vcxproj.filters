@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="vendor\simpleini\SimpleIni.h">
+      <Filter>vendor\simpleini</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plugin.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\settings.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\samp.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\memory.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\dllmain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plugin.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\settings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{9fa3014f-a9fd-49b9-9de6-784ac871edb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor">
+      <UniqueIdentifier>{22a382c3-e79d-4b5e-b635-6877b04c8be9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\simpleini">
+      <UniqueIdentifier>{3d677fa5-cdfd-4884-8494-f9450ec1b0a8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
