@@ -2,13 +2,27 @@
 
 #include <simpleini/SimpleIni.h>
 
-const auto kMaxSignatuteBytes = 32;
+const auto kMaxSignatuteBytes = 64;
 using signature_t = std::vector<uint8_t>;
+
+struct pattern_t {
+    std::string pattern{};
+    std::string mask{};
+
+    size_t size() const { return pattern.size(); }
+};
 
 struct samp_version_t {
     std::string name{};
     signature_t detect_signature{};
-    signature_t cgame_createvehicle_pattern{};
+#if 0
+    pattern_t cgame_createvehicle_pattern{};
+#endif
+    address_t patch_offset{};
+    address_t pChat{};
+    address_t CChat_AddMessage{};
+    address_t CGame_CreateVehicle{};
+    address_t CGame_CreateVehicle_called_from_CVehiclePool_Create{};
 };
 
 struct mod_sa_version_t {
@@ -21,18 +35,24 @@ public:
 
 public:
     void Load();
+    void UnLoad() {
+        iniFile.SaveFile(kFileName);
+        iniFile.Reset();
+    }
 
 private:
-    bool is_hex_digit(std::string_view sv) {
+    void LoadDefault();
+
+    static bool is_hex_digit(std::string_view sv) {
         return sv.size() == 2 && std::isxdigit(sv[0]) && std::isxdigit(sv[1]);
     }
 
-    bool parse_byte(std::string_view sv, uint8_t& to) {
+    static bool parse_byte(std::string_view sv, uint8_t& to) {
         if (!is_hex_digit(sv)) {
             return false;
         }
         try {
-            int result = std::stoi(std::string(sv));
+            int result = std::stoi(std::string(sv), 0, 16);
             to = static_cast<uint8_t>(result);
             return true;
         }
@@ -41,7 +61,28 @@ private:
         return false;
     }
 
-    std::vector<std::string> split_str(std::string_view sv) {
+    static address_t parse_hex_address(std::string_view sv) {
+        auto has0x{ false };
+        if (sv.size() > 2 && sv.starts_with("0x")) {
+            has0x = true;
+        }
+
+        bool is_hex_address = std::all_of(sv.begin() + (has0x ? 3 : 1), sv.end(), [](unsigned char c) {
+            return std::isxdigit(c);
+            });
+
+        if (is_hex_address) {
+            try {
+                address_t result = std::stoi(std::string(has0x ? sv.substr(2) : sv), 0, 16);
+                return result;
+            }
+            catch (...) {
+            }
+        }
+        return 0;
+    }
+
+    static std::vector<std::string> split_str(std::string_view sv) {
         std::vector<std::string> result{};
 
         const auto delimiter = ' ';
@@ -58,36 +99,33 @@ private:
         result.emplace_back(start, next);
         return result;
     }
-
-    bool parse_signature(std::string_view sv, signature_t& to) {
-        const auto splits = split_str(sv);
-
-        if (!splits.size() || splits.size() > kMaxSignatuteBytes) {
-            return false;
-        }
-
-        for (const auto& split : splits) {
-            if (!is_hex_digit(split)) {
-                return false;
-            }
-
-            uint8_t byte{};
-            if (!parse_byte(sv, byte))
-                return false;
-
-            to.emplace_back(byte);
-        }
-        return true;
-    }
     
-    std::string signature_to_string(const signature_t& in) {
+    bool parse_signature(const char* section, const char* name, signature_t& to);
+
+    bool parse_pattern(const char* section, const char* name, pattern_t& to);
+
+    address_t parse_address(const char* section, const char* name);
+    
+    static std::string signature_to_string(const signature_t& in) {
         std::string result{};
         bool not_first{};
+
         for (const auto i : in) {
-            result += not_first ? std::format(" {:X}", i) : std::format("{:X}", i);
+            if (not_first) result += ' ';
+            result +=  std::format("{:02X}", i);
             not_first = true;
         }
         return result;
+    }
+
+    static std::string pattern_to_string(const pattern_t& in) {
+        std::string pattern_str{};
+
+        for (size_t i = 0; i < in.pattern.size(); i++) {
+            pattern_str += std::format("\\x{:02X}", static_cast<uint8_t>(in.pattern[i]));
+        }
+
+        return std::format("{} (mask: {})", pattern_str, in.mask);
     }
 
 public:

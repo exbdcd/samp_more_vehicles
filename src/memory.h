@@ -4,18 +4,43 @@
 
 using address_t = uintptr_t;
 
-inline size_t GetModuleSize(char* name) {
-    HMODULE hModule = GetModuleHandle(name);
-    if (!hModule)
-        return 0;
-}
-
-inline size_t GetModuleSize(HMODULE module) {
-    auto dos_Header = PIMAGE_DOS_HEADER(module);
-    auto pe_Header = PIMAGE_NT_HEADERS(long(module) + dos_Header->e_lfanew);
+inline size_t GetModuleSize(HMODULE hModule) {
+    auto dos_Header = PIMAGE_DOS_HEADER(hModule);
+    auto pe_Header = PIMAGE_NT_HEADERS(long(hModule) + dos_Header->e_lfanew);
     auto optional_Header = &pe_Header->OptionalHeader;
 
     return optional_Header->SizeOfCode;
+}
+
+inline size_t GetModuleSize(char* name) {
+    HMODULE hModule = GetModuleHandleA(name);
+    if (!hModule)
+        return 0;
+
+    return GetModuleSize(hModule);
+}
+
+inline std::string GetModuleFileName(HMODULE hModule)
+{
+    static constexpr auto INITIAL_BUFFER_SIZE = MAX_PATH;
+    static constexpr auto MAX_ITERATIONS = 7;
+    std::string ret;
+    auto bufferSize = INITIAL_BUFFER_SIZE;
+    for (size_t iterations = 0; iterations < MAX_ITERATIONS; ++iterations)
+    {
+        ret.resize(bufferSize);
+        auto charsReturned = GetModuleFileNameA(hModule, &ret[0], bufferSize);
+        if (charsReturned < ret.length())
+        {
+            ret.resize(charsReturned);
+            return ret;
+        }
+        else
+        {
+            bufferSize *= 2;
+        }
+    }
+    return "";
 }
 
 class module_t {
@@ -24,7 +49,7 @@ public:
     module_t(const module_t&) = delete;
 
     explicit module_t(const char* name) {
-        auto hModule = GetModuleHandle(name);
+        auto hModule = GetModuleHandleA(name);
         if (!hModule) {
             return;
         }
