@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include "settings.h"
+#include "mod_sa_fix.h"
 
 inline class Plugin {
 public:

@@ -26,8 +26,38 @@ struct samp_version_t {
 };
 
 struct mod_sa_version_t {
+    std::string name{};
     std::string module_name{};
+    address_t detect_offset{};
+    signature_t detect_signature{};
+    pattern_t gta_vehicle_get_by_id_pattern;
 };
+
+inline class VehicleNames {
+public:
+    void Add(int mi, const char* name) {
+        if (!name || !name[0] || !mi) {
+            return;
+        }
+        names.emplace(mi, name);
+    }
+
+    char* GetPtr(int mi) {
+        auto name = names.find(mi);
+        if (name == names.end()) {
+            Add(mi, std::format("Vehicle {}", mi).c_str());
+            return GetPtr(mi);
+        }
+        return name->second.data();
+    }
+
+    size_t size() const {
+        return names.size();
+    }
+
+private:
+    std::unordered_map<int, std::string> names{};
+} VehicleNames;
 
 class Settings {
 public:
@@ -36,8 +66,10 @@ public:
 public:
     void Load();
     void UnLoad() {
+#if 0
         iniFile.SaveFile(kFileName);
         iniFile.Reset();
+#endif
     }
 
 private:
@@ -105,6 +137,20 @@ private:
     bool parse_pattern(const char* section, const char* name, pattern_t& to);
 
     address_t parse_address(const char* section, const char* name);
+
+    static int parse_model_id(const char* text) {
+        if (!text || !text[0]) {
+            return 0;
+        }
+
+        try {
+            int result = std::stoi(std::string(text), 0, 10);
+            return result;
+        }
+        catch (...) {
+        }
+        return 0;
+    }
     
     static std::string signature_to_string(const signature_t& in) {
         std::string result{};
@@ -133,6 +179,10 @@ public:
         return enable_samp_fix;
     }
 
+    bool do_print_warning_in_chat() const {
+        return print_warning_in_chat;
+    }
+
     bool mod_sa_fix_enabled() const {
         return enable_mod_sa_fix;
     }
@@ -150,6 +200,7 @@ private:
 
     bool enable_samp_fix{};
     bool enable_mod_sa_fix{};
+    bool print_warning_in_chat{};
 
     std::vector<samp_version_t> samp_versions{};
     std::vector<mod_sa_version_t> mod_sa_versions{};

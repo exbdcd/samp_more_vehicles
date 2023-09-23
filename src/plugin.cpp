@@ -2,6 +2,7 @@
 
 #include "plugin.h"
 
+std::shared_ptr<urmem::patch> patch{};
 urmem::hook cgame_createvehicle_hk{};
 void* __fastcall HOOK_CGame__CreateVehicle(void* pGame, void* edx, int nModel, float x, float y, float z, float rotation, bool hasSiren);
 
@@ -67,7 +68,7 @@ void Plugin::WriteToLog(const char* text) {
 }
 
 void Plugin::DoInit() {
-    Log("Do init stuff");
+    Log("** Do init stuff");
 
     if (!settings.samp_fix_enabled() && !settings.mod_sa_fix_enabled()) {
         Log("Nothing to init.");
@@ -83,7 +84,7 @@ void Plugin::DoInit() {
             if (memcmp_safe((uint8_t*)samp.get_address() + 0xBABE, samp_version.detect_signature.data(),
                 samp_version.detect_signature.size())) {
 
-                Log("Detected SA:MP Version: {}", samp_version.name);
+                Log("Detected SA:MP version: {}", samp_version.name);
                 this->samp_version = samp_version;
                 break;
             }
@@ -94,10 +95,12 @@ void Plugin::DoInit() {
         }
         else {
             const auto patch_size = 6;
-            Log("Installing patch (offset: {:#x}, size: {}) ...", samp_version.patch_offset, patch_size);
-            urmem::patch::make(samp.get_address() + samp_version.patch_offset, urmem::bytearray_t{ 0x90, patch_size });
+            const auto patch_addr = samp.get_address() + samp_version.patch_offset;
+            Log("Installing patch (offset: {:#x}, size: {})...", samp_version.patch_offset, patch_size);
+            urmem::unprotect_memory(samp.get_address() + samp_version.patch_offset, patch_size);
+            memset((void*)(patch_addr), 0x90, patch_size);
 
-            Log("Hooking CGame::CreateVehicle (offset: {:#x}) ...", samp_version.CGame_CreateVehicle);
+            Log("Hooking CGame::CreateVehicle (offset: {:#x})...", samp_version.CGame_CreateVehicle);
             cgame_createvehicle_hk.install(samp.get_address() + samp_version.CGame_CreateVehicle,
                 urmem::get_func_addr(&HOOK_CGame__CreateVehicle), urmem::hook::type::jmp, 6);
         }
@@ -105,6 +108,15 @@ void Plugin::DoInit() {
 
     DoModSaFix();
     Log("Init done.");
+}
+
+void Plugin::DoModSaFix() {
+    if (!settings.mod_sa_fix_enabled()) {
+        return;
+    }
+
+    Log("** Do mod_sa fix");
+    mod_sa_fix.Init();
 }
 
 bool Plugin::IsVehicleModel(int id) {
@@ -139,7 +151,34 @@ void Plugin::AddChatMessage(const std::string& text) {
     const auto pChat = *(void**)(samp_address + samp_version.pChat);
     const auto func = samp_address + samp_version.CChat_AddMessage;
 
-    ((void(__thiscall*)(void*, unsigned int, const char*))func)(pChat, 0xFFA9C4E4, text.c_str());
+    ((void(__thiscall*)(void*, unsigned int, const char*))func)(pChat, 0xA9C4E4FF, text.c_str());
+}
+
+void* call_create_vehicle(address_t calledFrom, void* pGame, int nModel, float x, float y, float z, float rotation, bool hasSiren) {
+
+    const auto kReplace = 411;
+    const auto warningInChat = Plugin.GetSettings().do_print_warning_in_chat();
+    const auto samp_address = Plugin.get_samp_module().get_address();
+    const auto called_from_cvehiclepool_create = Plugin.get_samp_version().CGame_CreateVehicle_called_from_CVehiclePool_Create;
+
+    if (!Plugin.IsVehicleModel(nModel)) {
+        if (calledFrom == called_from_cvehiclepool_create) {
+            Plugin.Log("Hook CGame::CreateVehicle: Unknown vehicle model {:d} was not create (because called from CVehiclePool::Create)", nModel);
+            if (warningInChat) {
+                Plugin.AddChatMessage(std::format("Warning: Unknown vehicle model {:d} was not created!", nModel));
+            }
+            return nullptr;
+        }
+
+        nModel = kReplace;
+    }
+
+    auto* result = urmem::call_function<urmem::calling_convention::thiscall, void*, void*, int, float, float, float, float, bool>(
+        cgame_createvehicle_hk.get_original_addr() + 6, pGame, nModel, x, y, z, rotation, hasSiren);
+
+    mod_sa_fix.OnAddNewVehicle(result);
+
+    return result;
 }
 
 void* __fastcall HOOK_CGame__CreateVehicle(void* pGame, void* edx, int nModel, float x, float y, float z, float rotation, bool hasSiren) {
@@ -161,29 +200,6 @@ void* __fastcall HOOK_CGame__CreateVehicle(void* pGame, void* edx, int nModel, f
     Plugin.Log("HOOK_CGame__CreateVehicle:  nModel: {}, x: {:.2f}, y: {:.2f}, z: {:.2f}, rotation: {:.2f}, hasSiren: {} | called_from: {:#x}",
         nModel, x, y, z, rotation, hasSiren, called_from);
 #endif
-
-    const auto kReplace = 411;
-    if (!Plugin.IsVehicleModel(nModel)) {
-        if (called_from == called_from_cvehiclepool_create) {
-            Plugin.Log("Hook CGame::CreateVehicle: Unknown vehicle model {:d} was not create (because called from CVehiclePool::Create)", nModel);
-            Plugin.AddChatMessage(std::format("Warning: Unknown vehicle model {:d} was not created!", nModel));
-            return nullptr;
-        }
-
-        Plugin.Log("Hook CGame::CreateVehicle: Unknown vehicle model {:d} replaced for prevent crash", nModel);
-        Plugin.AddChatMessage(std::format("Warning: Unknown vehicle model {:d} replaced for {:d}", nModel, kReplace));
-        nModel = kReplace;
-    }
-
-    return urmem::call_function<urmem::calling_convention::thiscall, void*, void*, int, float, float, float, float, bool>(
-        cgame_createvehicle_hk.get_original_addr() + 6, pGame, nModel, x, y, z, rotation, hasSiren);
-}
-
-void Plugin::DoModSaFix() {
-    if (!settings.mod_sa_fix_enabled()) {
-        return;
-    }
-
-    Log("Do mod_sa fix");
-
+ 
+    return call_create_vehicle(called_from, pGame, nModel, x, y, z, rotation, hasSiren);
 }
