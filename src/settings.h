@@ -15,9 +15,6 @@ struct pattern_t {
 struct samp_version_t {
     std::string name{};
     signature_t detect_signature{};
-#if 0
-    pattern_t cgame_createvehicle_pattern{};
-#endif
     address_t patch_offset{};
     address_t pChat{};
     address_t CChat_AddMessage{};

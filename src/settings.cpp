@@ -81,14 +81,6 @@ void Settings::Load() {
                         continue;
                     }
 
-#if 0
-                    if (!parse_pattern(section_name, "cgame_createvehicle_pattern", samp_version.cgame_createvehicle_pattern)) {
-                        Plugin.Log("Warning: samp_version '{}' ignored:  Pattern 'cgame_createvehicle_pattern' not found or invalid format!",
-                            samp_version.name);
-
-                        continue;
-                    }
-#endif
                     samp_version.patch_offset = parse_address(section_name, "patch_offset");
                     if (!samp_version.patch_offset) {
                         Plugin.Log("Warning: samp_version '{}' ignored:  Offset 'patch_offset' not found or invalid format!",
@@ -124,13 +116,10 @@ void Settings::Load() {
                         continue;
                     }
 
-                    Plugin.Log("SAMP version '{}' loaded.", samp_version.name);
+                    Plugin.Log("SA:MP version '{}' loaded.", samp_version.name);
                     Plugin.Log("** Detect signature: {}  (size: {})", signature_to_string(samp_version.detect_signature),
                         samp_version.detect_signature.size());
-#if 0
-                    Plugin.Log("** CGame::CreateVehicle pattern: {}  (size: {})", pattern_to_string(samp_version.cgame_createvehicle_pattern),
-                        samp_version.cgame_createvehicle_pattern.size());
-#endif
+
                     Plugin.Log("** Patch offset: {:#x}", samp_version.patch_offset);
                     Plugin.Log("** pChat offset: {:#x}", samp_version.pChat);
                     Plugin.Log("** CChat::AddMessage offset: {:#x}", samp_version.CChat_AddMessage);

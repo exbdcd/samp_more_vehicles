@@ -60,7 +60,6 @@
     <ClInclude Include="src\memory.h" />
     <ClInclude Include="src\mod_sa_fix.h" />
     <ClInclude Include="src\plugin.h" />
-    <ClInclude Include="src\samp.h" />
     <ClInclude Include="src\settings.h" />
     <ClInclude Include="vendor\simpleini\SimpleIni.h" />
     <ClInclude Include="vendor\urmem\urmem.hpp" />

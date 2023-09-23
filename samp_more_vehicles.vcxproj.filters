@@ -11,9 +11,6 @@
     <ClInclude Include="src\settings.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\samp.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\memory.h">
       <Filter>src</Filter>
     </ClInclude>
