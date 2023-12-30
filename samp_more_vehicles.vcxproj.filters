@@ -20,6 +20,9 @@
     <ClInclude Include="vendor\urmem\urmem.hpp">
       <Filter>vendor\urmem</Filter>
     </ClInclude>
+    <ClInclude Include="src\samp_more_vehicles.ini.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

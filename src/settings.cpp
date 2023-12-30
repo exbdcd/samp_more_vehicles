@@ -1,46 +1,10 @@
 #include "pch.h"
 
 #include "settings.h"
+#include "samp_more_vehicles.ini.h"
 
 void Settings::LoadDefault() {
-    if (!iniFile.GetValue("general", "enable_samp_fix")) {
-        iniFile.SetValue("general", "enable_samp_fix", "true");
-    }
-
-    if (!iniFile.GetValue("general", "enable_mod_sa_fix")) {
-        iniFile.SetValue("general", "enable_mod_sa_fix", "false");
-    }
-
-    if (!iniFile.GetValue("general", "print_warning_in_chat")) {
-        iniFile.SetValue("general", "print_warning_in_chat", "true");
-    }
-
-    if (!iniFile.GetSection("samp 0.3.7-R1")) {
-        iniFile.SetValue("samp 0.3.7-R1", "detect_signature", "F8 03 6A 00 40 50 51 8D 4C 24 0C E8 82 02 01 00");
-        iniFile.SetValue("samp 0.3.7-R1", "patch_offset", "0x246915");
-        iniFile.SetValue("samp 0.3.7-R1", "pChat", "0x21A0E4");
-        iniFile.SetValue("samp 0.3.7-R1", "CChat_AddMessage", "0x645A0");
-        iniFile.SetValue("samp 0.3.7-R1", "CGame_CreateVehicle", "0x9B890");
-        iniFile.SetValue("samp 0.3.7-R1", "CGame_CreateVehicle_called_from_CVehiclePool_Create", "0x1B5EB");
-    }
-
-    if (!iniFile.GetSection("samp 0.3.7-R3")) {
-        iniFile.SetValue("samp 0.3.7-R3", "detect_signature", "E8 6D 9A 0A 00 83 C4 1C 85 C0 75 08 50 57 FF 15");
-        iniFile.SetValue("samp 0.3.7-R3", "patch_offset", "0xE412");
-        iniFile.SetValue("samp 0.3.7-R3", "pChat", "0x26E8C8");
-        iniFile.SetValue("samp 0.3.7-R3", "CChat_AddMessage", "0x679F0");
-        iniFile.SetValue("samp 0.3.7-R3", "CGame_CreateVehicle", "0x9FB40");
-        iniFile.SetValue("samp 0.3.7-R3", "CGame_CreateVehicle_called_from_CVehiclePool_Create", "0x1E98B");
-    }
-
-    if (!iniFile.GetSection("samp 0.3.7-R5")) {
-        iniFile.SetValue("samp 0.3.7-R5", "detect_signature", "C0 74 06 88 9E 34 02 00 00 88 9E 32 02 00 00 88");
-        iniFile.SetValue("samp 0.3.7-R5", "patch_offset", "0xE751");
-        iniFile.SetValue("samp 0.3.7-R5", "pChat", "0x26EB80");
-        iniFile.SetValue("samp 0.3.7-R5", "CChat_AddMessage", "0x68170");
-        iniFile.SetValue("samp 0.3.7-R5", "CGame_CreateVehicle", "0xA0250");
-        iniFile.SetValue("samp 0.3.7-R5", "CGame_CreateVehicle_called_from_CVehiclePool_Create", "0x1F0DB");
-    }
+    iniFile.LoadData(samp_more_vehicles_ini, samp_more_vehicles_ini_size);
 }
 
 void Settings::Load() {
@@ -50,7 +14,10 @@ void Settings::Load() {
 
     auto error = iniFile.LoadFile(logFilePath);
     if (error != SI_OK) {
-        Plugin.Log("SI_Error: {}", error);
+        Plugin.Log("Warning: Settings file was not loaded (SI_Error: {})", error);
+        Plugin.Log("Using default settings...");
+
+        LoadDefault();
     }
 
     enable_samp_fix = iniFile.GetBoolValue("general", "enable_samp_fix", true);

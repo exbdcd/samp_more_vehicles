@@ -60,6 +60,9 @@ class Settings {
 public:
     static inline const auto kFileName = "samp_more_vehicles.ini";
 
+private:
+    void LoadDefault();
+
 public:
     void Load();
     void UnLoad() {
@@ -68,9 +71,6 @@ public:
         iniFile.Reset();
 #endif
     }
-
-private:
-    void LoadDefault();
 
     static bool is_hex_digit(std::string_view sv) {
         return sv.size() == 2 && std::isxdigit(sv[0]) && std::isxdigit(sv[1]);
